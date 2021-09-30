@@ -1,0 +1,28 @@
+version: '2'
+services:
+  msddecrypt:
+    build:
+      context: .
+
+    image: msddecrypt
+    container_name: msddecrypt
+    hostname: msddecrypt
+
+    volumes:
+      - ${MSD_IMAGE_DIR:-./images}:/opt/images
+      - ${MSD_OUT_DIR:-./out}:/opt/out
+      #- ./src:/opt/app
+
+    environment:
+      SWU_KEYS: >
+        {
+          "T-HKM":    "1ac8989ff57db5e75ea67b033050871c",
+          "T-HKP":    "cce8a3ef92f3e94895999e928f4dd6c3",
+          "T-JZM":    "9b1d077c0d137d406c79ddacb6b159fe",
+          "T-HKMFK":  "c7097975e8ab994beb5eaae57e0ba77c",
+          "T-KTM":    "d0d49d5f36f5c0da50062fbf32168f5b",
+          "T-KTSU":   "19e1ba41163f03735e692d9daa2cbb47",
+          "T-KTSD":   "39332605ff47a0aea999b10ce9087389",
+          "T-KTM2":   "29110e0ce940b3a9b67d3e158f3f1342",
+          "T-KTM2L":  "46b04f5e794ca4377a20951c9ea00427"
+        }

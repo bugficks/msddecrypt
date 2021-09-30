@@ -5,7 +5,7 @@
 import sys
 import ctypes
 from ctypes import c_uint32, c_byte, byref, pointer, cast
-from teec import *
+from .teec import *
 from Crypto.Cipher import AES
 import hashlib
 from binascii import hexlify, unhexlify
@@ -211,7 +211,7 @@ class SWUAESClient(object):
         return self.do_aes(data)
 
     def finalize(self):
-        return ""
+        return b''
 
 class SWUClient(object):
     def __init__(self, use_sw=True):

@@ -17,12 +17,13 @@ import samygo
 from samygo import swu
 from samygo.msd import MSDFile
 
+__VERSION__ = "0.5.0"
 ########################################################################################################################
 
-TIZEN_OUIT_HDR_MAGIC18 = "Tizen Software Upgrade Tree Binary Format ver. 1.8"
-TIZEN_OUIT_HDR_MAGIC19 = "Tizen Software Upgrade Tree Binary Format ver. 1.9"
+TIZEN_OUIT_HDR_MAGIC18 = b"Tizen Software Upgrade Tree Binary Format ver. 1.8"
+TIZEN_OUIT_HDR_MAGIC19 = b"Tizen Software Upgrade Tree Binary Format ver. 1.9"
 
-MAGIC_SALTED = 'Salted__'
+MAGIC_SALTED = b'Salted__'
 SIZE_SALT = 8
 
 #TIZEN_OUIT_SIGN_SIZE = 0x100
@@ -51,43 +52,15 @@ class OUITHeaderException(Exception):
 
 def MSDDecrypt(f, dirOut, extractNames):
 
-    print "magic:", f.magic()
-    print 'headers [%d]' % len(f.headers())
+    print("magic:", f.magic())
+    print('headers [%d]' % len(f.headers()))
     for hdr in f.headers():
         l = hdr.label
         l += ' ' * (12-len(l))
-        print "%s: offs: %08x size: %08x" % (l, hdr.offs, hdr.size)
-    print ''
+        print("%s: offs: %08x size: %08x" % (l, hdr.offs, hdr.size))
+    print('')
 
-    dataOffs = None
-    hdrDecr = None
-    for key in SWU_KEYS.values():
-        if dataOffs >= 0:
-            break
-
-        for hdr in f.headers():
-            hdrEncr = f.readfrom(hdr.offs, hdr.size)
-            delta = hdrEncr.find(MAGIC_SALTED)
-            if delta < 0:
-                raise OUITHeaderException(MAGIC_SALTED)
-
-            saltStart = len(MAGIC_SALTED) + delta
-            salt = hdrEncr[saltStart : saltStart + SIZE_SALT]
-            hdrEncr = hdrEncr[saltStart + len(salt) :]
-
-            with swu.SWUClient() as SWUClient:
-                SWUClient.init(0, key, salt)
-                hdrDecr = SWUClient.update(hdrEncr) + SWUClient.finalize()
-
-            dataOffs = hdrDecr.find(TIZEN_OUIT_HDR_MAGIC18)
-            if dataOffs < 0:
-                dataOffs = hdrDecr.find(TIZEN_OUIT_HDR_MAGIC19)
-
-            if dataOffs >= 0:
-                print 'Found valid header magic'
-                print "%s %s 0x%08x" % (hdr.label, key, dataOffs)
-                break
-
+    key, hdrDecr, hdrEncr = tryDecryptHeader(f)
     if False:
         #passDecr = SWUClient.generatePassphrase(0, SWUClient.itemsAESPassphraseEncrypted, salt)
         open('/opt/out/_hdr.decr', 'wb').write(hdrDecr)
@@ -118,7 +91,7 @@ def MSDDecrypt(f, dirOut, extractNames):
             if start <= 0:
                 break
             start += len(sss)
-            l = ord(hdrDecr[start])
+            l = hdrDecr[start]
             partname = hdrDecr[start+1 : start+1+l]
             partnames.append(partname)
             start += len(partname)
@@ -178,7 +151,7 @@ def MSDDecrypt(f, dirOut, extractNames):
         if start <= 0:
             return None
         start += len(sss)
-        l = ord(hdrDecr[start])
+        l = hdrDecr[start]
         platname = hdrDecr[start+1 : start+1+l]
         start += len(platname)+1
 
@@ -193,20 +166,20 @@ def MSDDecrypt(f, dirOut, extractNames):
             yyyy, mm, dd = struct.unpack(">HBB", hdrDecr[start:start+4])
             date = datetime.date(yyyy, mm, dd)
 
-        return platname, (major, minor), date
+        return platname.decode('ascii'), (major, minor), date
 
     platname, ver, date = getOUSWImageVersionDescHack()
-    print "image ver: %s %d.%d %s" % (platname, ver[0], ver[1], date)
-    print ""
+    print("image ver: %s %d.%d %s" % (platname, ver[0], ver[1], date))
+    print("")
 
     parts = f.parts()
     salts = getPartSaltsHack(hdrDecr)
     partnames = getPartNamesHack(hdrDecr)
     crc32s = getPartCRC32sHack(hdrDecr)
-    print 'partitions [%d]' % len(f.parts())
+    print('partitions [%d]' % len(f.parts()))
     for x in range(0, len(salts)):
-        partname = partnames[x]
-        print "id: %d name: %s salt: %s offs: %08x size: %08x crc32: %08x" % (x+1, partname.ljust(13), hexlify(salts[x]), parts[x].offs, parts[x].size, crc32s[x])
+        partname = partnames[x].decode('ascii')
+        print("id: %d name: %s salt: %s offs: %08x size: %08x crc32: %08x" % (x+1, partname.ljust(13), hexlify(salts[x]).decode('ascii'), parts[x].offs, parts[x].size, crc32s[x]))
 
         doExtract = False
         if dirOut:
@@ -228,7 +201,7 @@ def MSDDecrypt(f, dirOut, extractNames):
 
                 while True:
                     progress = ((part.size - nsize) * 100) / part.size
-                    sys.stdout.write("\r* Decrypting '%s' %3d%% [%10d of %d]" % (outn, progress, part.size - nsize, part.size))
+                    sys.stdout.write("\r* Decrypting '%s' %3d%% [%08x of %08x]" % (outn, progress, part.size - nsize, part.size))
                     sys.stdout.flush()
 
                     toread = min(nsize, 0x10000)
@@ -252,7 +225,7 @@ def MSDDecrypt(f, dirOut, extractNames):
                 destSize = part.size - ord(padLen)
                 outf.truncate(destSize)
 
-            print("\r* Decrypting '%s' 100%% [%10d of %d]" % (outn, part.size, part.size))
+            print("\r* Decrypting '%s' 100%% [%08x of %08x]" % (outn, part.size, part.size))
 
             outf.close()
             outf = open(outn, 'rb')
@@ -271,19 +244,46 @@ def MSDDecrypt(f, dirOut, extractNames):
 
             print('')
             if crc != crc32s[x]:
-                print "- CRC32 mismatch! [msd: %08x file: %08x]" % (crc, crc32s[x])
+                print("- CRC32 mismatch! [msd: %08x file: %08x]" % (crc, crc32s[x]))
             else:
-                print "+ CRC32 passed!"
+                print("+ CRC32 passed!")
+
+def tryDecryptHeader(f):
+    for key in SWU_KEYS.values():
+        for hdr in f.headers():
+            hdrEncr = f.readfrom(hdr.offs, hdr.size)
+            delta = hdrEncr.find(MAGIC_SALTED)
+            if delta < 0:
+                raise OUITHeaderException(MAGIC_SALTED)
+
+            saltStart = len(MAGIC_SALTED) + delta
+            salt = hdrEncr[saltStart : saltStart + SIZE_SALT]
+            hdrEncr = hdrEncr[saltStart + len(salt) :]
+
+            with swu.SWUClient() as SWUClient:
+                SWUClient.init(0, key.encode('ascii'), salt)
+                hdrDecr = SWUClient.update(hdrEncr) + SWUClient.finalize()
+
+            dataOffs = hdrDecr.find(TIZEN_OUIT_HDR_MAGIC18)
+            if dataOffs < 0:
+                dataOffs = hdrDecr.find(TIZEN_OUIT_HDR_MAGIC19)
+
+            if dataOffs >= 0:
+                print('Found valid header magic')
+                print("%s %s 0x%08x" % (hdr.label, key, dataOffs))
+                return key, hdrDecr, hdrEncr
+
+    return None, None, None
 
 if __name__ == "__main__":
-    print "Tizen msd Decryptor v0.4.1"
-    print "(c) bugficks@samygo 2016-2021"
-    print ""
+    print(f"Tizen msd Decryptor v{__VERSION__}")
+    print("(c) bugficks@samygo 2016-2021")
+    print("")
 
     argc = len(sys.argv)
     if argc < 2:
-        print "Usage: msddecrypt.py </path/to/upgrade.msd> [/path/to/outdir [partition names]]"
-        print ""
+        print("Usage: msddecrypt.py </path/to/upgrade.msd> [/path/to/outdir [partition names]]")
+        print("")
         sys.exit(0)
 
     pathMSD = sys.argv[1]

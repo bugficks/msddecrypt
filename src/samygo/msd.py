@@ -112,20 +112,20 @@ class MSDFile(object):
         self._f = open(path, 'rb')
         self.path = path
         magic = self._f.read(6)
-        if magic == "MSDU10":
+        if magic == b"MSDU10":
             MSDU_PARTITION = MSDU10_PARTITION
             MSDU_STRING    = MSDU10_STRING
             MSDU_OUITDATA  = MSDU10_OUITDATA
             MSDU_OUITHDR   = MSDU10_OUITHDR
             MSDU_HDR       = MSDU10_HDR
-        elif magic == "MSDU11":
+        elif magic == b"MSDU11":
             MSDU_PARTITION = MSDU11_PARTITION
             MSDU_STRING    = MSDU11_STRING
             MSDU_OUITDATA  = MSDU11_OUITDATA
             MSDU_OUITHDR   = MSDU11_OUITHDR
             MSDU_HDR       = MSDU11_HDR
         else:
-            raise MSDFileException('Invalid Magic')
+            raise MSDFileException("Invalid Magic: '%s'", magic)
 
         self._f.seek(0)
         msdHdr = MSDU_HDR()
@@ -143,13 +143,13 @@ class MSDFile(object):
             data = MSDU_OUITDATA()
             self._f.readinto(data)
 
-            data.label = self._f.read(data.label_len)
+            data.label = self._f.read(data.label_len).decode('ascii')
             msdOUITHdr.items.append(data)
 
         self.msdOUITHdr = msdOUITHdr
 
     def magic(self):
-        return self.msdHdr.magic
+        return self.msdHdr.magic.decode('ascii')
 
     def parts(self):
         return self.msdHdr.parts

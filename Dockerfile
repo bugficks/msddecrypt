@@ -1,6 +1,6 @@
 ########################################################################################################################
 #
-FROM python:2-alpine AS base
+FROM python:3-alpine AS base
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC \
@@ -32,4 +32,4 @@ ENV TZ=Etc/UTC
 COPY --from=base / /
 
 WORKDIR /opt
-ENTRYPOINT [ "python2", "/opt/app/msddecrypt.py" ]
+ENTRYPOINT [ "python3", "/opt/app/msddecrypt.py" ]

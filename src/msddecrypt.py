@@ -39,6 +39,7 @@ SWU_KEYS = {
     "T-KTSD":   "39332605ff47a0aea999b10ce9087389",
     "T-KTM2":   "29110e0ce940b3a9b67d3e158f3f1342",
     "T-KTM2L":  "46b04f5e794ca4377a20951c9ea00427",
+    "T-NKL":    "5bab1098dab48792619ebd63650d929f",
 }
 
 if 'SWU_KEYS' in os.environ:

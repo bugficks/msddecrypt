@@ -179,9 +179,13 @@ def MSDDecrypt(f, dirOut, extractNames):
     partnames = getPartNamesHack(hdrDecr)
     crc32s = getPartCRC32sHack(hdrDecr)
     print('partitions [%d]' % len(f.parts()))
+    ljust = 0
     for x in range(0, len(salts)):
         partname = partnames[x].decode('ascii')
-        print("id: %d name: %s salt: %s offs: %08x size: %08x crc32: %08x" % (x+1, partname.ljust(13), hexlify(salts[x]).decode('ascii'), parts[x].offs, parts[x].size, crc32s[x]))
+        ljust = max(ljust, len(partname))
+    for x in range(0, len(salts)):
+        partname = partnames[x].decode('ascii')
+        print("id: %d name: %s salt: %s offs: %08x size: %08x crc32: %08x" % (x+1, partname.ljust(ljust), hexlify(salts[x]).decode('ascii'), parts[x].offs, parts[x].size, crc32s[x]))
 
         doExtract = False
         if dirOut:

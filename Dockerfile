@@ -1,14 +1,16 @@
 ########################################################################################################################
 #
-FROM python:3-alpine AS base
+ARG PY_VER=3
+FROM python:${PY_VER}-alpine AS base
 
+ARG PY_VER
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC \
     PYTHONDONTWRITEBYTECODE=1
 
 RUN apk update
 RUN apk add --no-cache --virtual .build-deps \
-    alpine-sdk openssl-dev python2-dev libffi-dev
+    alpine-sdk openssl-dev python${PY_VER}-dev libffi-dev
 
 RUN apk add --no-cache --virtual .run-deps \
     tzdata bash coreutils busybox-extras # git vim make curl openssl
@@ -28,8 +30,10 @@ RUN apk del tzdata .build-deps \
 #
 FROM scratch
 
+ARG PY_VER
 ENV TZ=Etc/UTC
+
 COPY --from=base / /
 
 WORKDIR /opt
-ENTRYPOINT [ "python3", "/opt/app/msddecrypt.py" ]
+ENTRYPOINT [ "python", "/opt/app/msddecrypt.py" ]

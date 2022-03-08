@@ -2,6 +2,7 @@
 # (c) bugficks@samygo 2016
 # GPL
 
+from __future__ import print_function
 import sys
 import os
 from os import path
@@ -271,12 +272,17 @@ def tryDecryptHeader(f):
             if dataOffs >= 0:
                 print('Found valid header magic')
                 print("%s %s 0x%08x" % (hdr.label, key, dataOffs))
+                # py2 compat
+                if type(hdrDecr) == str:
+                    hdrDecr = bytearray(hdrDecr)
+                if type(hdrEncr) == str:
+                    hdrEncr = bytearray(hdrEncr)
                 return key, hdrDecr, hdrEncr
 
     return None, None, None
 
 if __name__ == "__main__":
-    print(f"Tizen msd Decryptor v{__VERSION__}")
+    print("Tizen msd Decryptor v%s" % __VERSION__)
     print("(c) bugficks@samygo 2016-2021")
     print("")
 

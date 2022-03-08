@@ -18,7 +18,7 @@ import samygo
 from samygo import swu
 from samygo.msd import MSDFile
 
-__VERSION__ = "0.5.0"
+__VERSION__ = "0.5.1"
 ########################################################################################################################
 
 TIZEN_OUIT_HDR_MAGIC18 = b"Tizen Software Upgrade Tree Binary Format ver. 1.8"

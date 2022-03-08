@@ -3,6 +3,8 @@ services:
   msddecrypt:
     build:
       context: .
+      args:
+        - PY_VER=${PY_VER:-3}
 
     image: msddecrypt
     container_name: msddecrypt
